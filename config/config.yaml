@@ -1,16 +1,44 @@
-artifacts_root : artifacts
+artifacts_root: artifacts
 
 data_ingestion:
-  root_dir : artifacts/data_ingestion
-  source_URL : https://example.com/data.csv
-  local_data_file : artifacts/data_ingestion/data.zip
-  unzip_dir : artifacts/data_ingestion
+  tabular:
+    root_dir: artifacts/data_ingestion/tabular
+    source_url: https://archive.ics.uci.edu/ml/machine-learning-databases/00350/default%20of%20credit%20card%20clients.xls
+    local_file: artifacts/data_ingestion/tabular/credit_default.xls
+
+  timeseries:
+    root_dir: artifacts/data_ingestion/timeseries
+    source_url: kaggle://ieee-fraud-detection
+    local_file: artifacts/data_ingestion/timeseries/transactions.csv
+
+  documents:
+    root_dir: artifacts/data_ingestion/documents
+    source_url: kaggle://rvl-cdip
+    local_dir: artifacts/data_ingestion/documents/images
+
+  text:
+    root_dir: artifacts/data_ingestion/text
+    source_url: https://www.consumerfinance.gov/data-research/consumer-complaints/
+    local_file: artifacts/data_ingestion/text/complaints.csv
 
 prepare_base_model:
-  root_dir : artifacts/prepare_base_model
-  base_model_path : artifacts/prepare_base_model/base_model.h5
-  updated_base_model_path : artifacts/prepare_base_model/updated_base_model.h5
-  
+  vision:
+    root_dir: artifacts/prepare_base_model/vision
+    base_model_path: artifacts/prepare_base_model/vision/resnet18.pth
+
 training:
-  root_dir : artifacts/training
-  trained_model_path : artifacts/training/trained_model.h5
+  tabular:
+    root_dir: artifacts/training/tabular
+    trained_model_path: artifacts/training/tabular/lightgbm.pkl
+
+  timeseries:
+    root_dir: artifacts/training/timeseries
+    trained_model_path: artifacts/training/timeseries/lstm.pth
+
+  vision:
+    root_dir: artifacts/training/vision
+    trained_model_path: artifacts/training/vision/cnn.pth
+
+  text:
+    root_dir: artifacts/training/text
+    trained_model_path: artifacts/training/text/bert.pth
