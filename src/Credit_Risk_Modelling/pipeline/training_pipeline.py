@@ -1,39 +1,61 @@
+import logging
 from pathlib import Path
+
 from Credit_Risk_Modelling.config.configuration import ConfigurationManager
+
+# Ingestion
 from Credit_Risk_Modelling.components.data_ingestion_tabular import TabularDataIngestion
 from Credit_Risk_Modelling.components.data_ingestion_timeseries import TimeSeriesDataIngestion
 from Credit_Risk_Modelling.components.data_ingestion_documents import DocumentDataIngestion
 from Credit_Risk_Modelling.components.data_ingestion_text import TextDataIngestion
 from Credit_Risk_Modelling.entity.data_ingestion_entity import DataIngestionConfig
-from Credit_Risk_Modelling.components.data_validation_tabular import TabularDataValidation
-from Credit_Risk_Modelling.components.feature_engineering_tabular import TabularFeatureEngineering
-from Credit_Risk_Modelling.entity.data_validation_entity import DataValidationConfig
-from Credit_Risk_Modelling.components.data_validation_documents import DocumentDataValidation
-from Credit_Risk_Modelling.components.data_validation_timeseries import TimeSeriesDataValidation
-from Credit_Risk_Modelling.components.data_validation_text import TextDataValidation
 
+# Validation
+from Credit_Risk_Modelling.components.data_validation_tabular import TabularDataValidation
+from Credit_Risk_Modelling.components.data_validation_timeseries import TimeSeriesDataValidation
+from Credit_Risk_Modelling.components.data_validation_documents import DocumentDataValidation
+from Credit_Risk_Modelling.components.data_validation_text import TextDataValidation
+from Credit_Risk_Modelling.entity.data_validation_entity import DataValidationConfig
+
+# Feature Engineering
+from Credit_Risk_Modelling.components.feature_engineering_tabular import TabularFeatureEngineering
+from Credit_Risk_Modelling.components.feature_engineering_timeseries import TimeSeriesFeatureEngineering
+from Credit_Risk_Modelling.entity.feature_engineering_entity import TimeSeriesFeatureConfig
+
+# Training
+from Credit_Risk_Modelling.components.model_trainer_timeseries import TimeSeriesModelTrainer
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s]: %(levelname)s: %(message)s"
+)
 
 
 class TrainingPipeline:
     def __init__(self):
-        self.config = ConfigurationManager(Path("config/config.yaml"))
+        self.config_manager = ConfigurationManager(Path("config/config.yaml"))
+        self.data_ingestion_config = self.config_manager.get_data_ingestion_config()
 
+    # STAGE 1: DATA INGESTION
     def run_data_ingestion(self):
-        di = self.config.get_data_ingestion_config()
+        logging.info("Starting data ingestion stage")
+
+        di = self.data_ingestion_config
 
         TabularDataIngestion(
             DataIngestionConfig(
-                di.tabular.root_dir,
-                di.tabular.source_url,
-                Path(di.tabular.local_file)
+                root_dir=Path(di.tabular.root_dir),
+                source_url=di.tabular.source_url,
+                local_path=Path(di.tabular.local_file),
             )
         ).ingest()
 
         TimeSeriesDataIngestion(
             DataIngestionConfig(
-                di.timeseries.root_dir,
-                di.timeseries.source_url,
-                Path(di.timeseries.local_file)
+                root_dir=Path(di.timeseries.root_dir),
+                source_url=di.timeseries.source_url,
+                local_path=Path(di.timeseries.local_file),
             )
         ).ingest()
 
@@ -45,27 +67,86 @@ class TrainingPipeline:
             Path(di.text.local_file)
         ).ingest()
 
+        logging.info("Data ingestion stage completed")
+
+    # STAGE 2: DATA VALIDATION
+    def run_data_validation(self):
+        logging.info("Starting data validation stage")
+
+        di = self.data_ingestion_config
+
         TabularDataValidation(
             DataValidationConfig(
                 required_columns=["default_payment_next_month"],
-                data_path=Path("artifacts/data_ingestion/tabular/credit_default.xls")
+                data_path=Path(di.tabular.local_file),
             )
         ).validate()
 
         TimeSeriesDataValidation(
-            Path("artifacts/data_ingestion/timeseries/transactions.csv")
+            Path(di.timeseries.local_file)
         ).validate()
 
         DocumentDataValidation(
-            Path("artifacts/data_ingestion/documents/images")
+            Path(di.documents.local_dir)
         ).validate()
 
         TextDataValidation(
-            Path("artifacts/data_ingestion/text/complaints.csv")
+            Path(di.text.local_file)
         ).validate()
 
+        logging.info("Data validation stage completed")
+
+    # STAGE 3: FEATURE ENGINEERING
+    def run_feature_engineering(self):
+        logging.info("Starting feature engineering stage")
+
+        di = self.data_ingestion_config
+
+        # ---- Tabular ----
+        tabular_fe_path = Path("artifacts/feature_engineering/tabular")
+        tabular_fe_path.mkdir(parents=True, exist_ok=True)
 
         TabularFeatureEngineering(
-            data_path=Path("artifacts/data_ingestion/tabular/credit_default.xls"),
-            output_path=Path("artifacts/feature_engineering/tabular")
+            data_path=Path(di.tabular.local_file),
+            output_path=tabular_fe_path,
         ).transform()
+
+        # ---- Time-Series ----
+        ts_fe_path = Path("artifacts/feature_engineering/timeseries")
+        ts_fe_path.mkdir(parents=True, exist_ok=True)
+
+        TimeSeriesFeatureEngineering(
+            TimeSeriesFeatureConfig(
+                data_path=Path(di.timeseries.local_file),
+                output_path=ts_fe_path,
+                window_size=5,
+            )
+        ).transform()
+
+        logging.info("Feature engineering stage completed")
+
+    # STAGE 4: MODEL TRAINING
+    def run_model_training(self):
+        logging.info("Starting model training stage")
+
+        ts_model_path = Path("artifacts/training/timeseries")
+        ts_model_path.mkdir(parents=True, exist_ok=True)
+
+        TimeSeriesModelTrainer(
+            data_path=Path("artifacts/feature_engineering/timeseries/timeseries_features.csv"),
+            model_path=ts_model_path / "lightgbm.pkl",
+        ).train()
+
+        logging.info("Model training stage completed")
+
+    # FULL PIPELINE
+    def run_pipeline(self):
+        self.run_data_ingestion()
+        self.run_data_validation()
+        self.run_feature_engineering()
+        self.run_model_training()
+
+
+# ENTRY POINT
+if __name__ == "__main__":
+    TrainingPipeline().run_pipeline()
