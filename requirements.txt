@@ -1,0 +1,34 @@
+# Core
+numpy
+pandas
+scikit-learn
+pyyaml
+python-box
+tqdm
+
+# ML – Tabular & Time Series
+lightgbm
+
+# Deep Learning
+torch
+torchvision
+
+# NLP
+transformers
+
+# Vision
+opencv-python
+
+# Backend & API
+fastapi
+uvicorn
+pydantic
+
+# Experiment Tracking & Reproducibility
+mlflow
+dvc
+dvc-gdrive
+
+# Visualization (research only, not backend)
+matplotlib
+seaborn
