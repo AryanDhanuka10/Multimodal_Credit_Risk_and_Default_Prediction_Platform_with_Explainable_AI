@@ -32,3 +32,4 @@ dvc-gdrive
 # Visualization (research only, not backend)
 matplotlib
 seaborn
+xlrd>=2.0.1
