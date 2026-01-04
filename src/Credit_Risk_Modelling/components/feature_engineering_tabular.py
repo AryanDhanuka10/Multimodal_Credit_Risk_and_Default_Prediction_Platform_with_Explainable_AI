@@ -12,7 +12,7 @@ class TabularFeatureEngineering:
         df = pd.read_excel(self.data_path)
 
         X = df.drop("default_payment_next_month", axis=1)
-        y = df["default_payment_next_month"]
+        y = df["default.payment.next.month"]
 
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)

@@ -77,7 +77,7 @@ class TrainingPipeline:
 
         TabularDataValidation(
             DataValidationConfig(
-                required_columns=["default_payment_next_month"],
+                required_columns=["default.payment.next.month"],
                 data_path=Path(di.tabular.local_file),
             )
         ).validate()
