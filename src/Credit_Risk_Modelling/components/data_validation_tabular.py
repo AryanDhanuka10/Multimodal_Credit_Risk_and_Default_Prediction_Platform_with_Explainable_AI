@@ -8,7 +8,7 @@ class TabularDataValidation:
 
     def validate(self):
         logging.info("Validating tabular dataset")
-        df = pd.read_excel(self.config.data_path)
+        df = pd.read_excel(self.config.data_path, header=1)
 
         missing_cols = set(self.config.required_columns) - set(df.columns)
         if missing_cols:
