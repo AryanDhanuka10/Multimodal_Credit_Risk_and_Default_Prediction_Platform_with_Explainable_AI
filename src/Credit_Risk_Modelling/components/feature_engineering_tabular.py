@@ -9,10 +9,19 @@ class TabularFeatureEngineering:
         self.output_path = output_path
 
     def transform(self):
-        df = pd.read_excel(self.data_path)
+        df = pd.read_excel(self.data_path, header=1)
 
+        df.columns = (
+            df.columns
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .str.replace(" ", "_")
+            .str.replace(".", "_")
+        )
+
+        y = df["default_payment_next_month"]
         X = df.drop("default_payment_next_month", axis=1)
-        y = df["default.payment.next.month"]
 
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)

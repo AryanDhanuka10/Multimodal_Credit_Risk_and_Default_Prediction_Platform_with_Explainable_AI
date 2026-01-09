@@ -33,3 +33,4 @@ dvc-gdrive
 matplotlib
 seaborn
 xlrd>=2.0.1
+pytest 

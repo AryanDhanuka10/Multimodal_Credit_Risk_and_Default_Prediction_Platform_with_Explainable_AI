@@ -1,6 +1,6 @@
 import pandas as pd
-import numpy as np
 from Credit_Risk_Modelling.entity.feature_engineering_entity import TimeSeriesFeatureConfig
+
 
 class TimeSeriesFeatureEngineering:
     def __init__(self, config: TimeSeriesFeatureConfig):
@@ -9,18 +9,50 @@ class TimeSeriesFeatureEngineering:
     def transform(self):
         df = pd.read_csv(self.config.data_path)
 
-        df = df.sort_values("TransactionDT")
+        # Normalize column names
+        df.columns = (
+            df.columns
+            .astype(str)
+            .str.strip()
+            .str.lower()
+        )
 
-        features = []
+        # Required columns check
+        required_cols = {"customer_id", "month", "income", "expense", "balance"}
+        missing = required_cols - set(df.columns)
+        if missing:
+            raise ValueError(f"Missing required columns for time-series FE: {missing}")
+
+        # Sort by entity and time
+        df = df.sort_values(["customer_id", "month"])
+
+        # Rolling feature engineering PER CUSTOMER
         for window in range(1, self.config.window_size + 1):
-            df[f"amt_mean_{window}"] = (
-                df["TransactionAmt"].rolling(window).mean()
-            )
-            df[f"amt_std_{window}"] = (
-                df["TransactionAmt"].rolling(window).std()
+            df[f"income_mean_{window}"] = (
+                df.groupby("customer_id")["income"]
+                  .rolling(window)
+                  .mean()
+                  .reset_index(level=0, drop=True)
             )
 
+            df[f"expense_mean_{window}"] = (
+                df.groupby("customer_id")["expense"]
+                  .rolling(window)
+                  .mean()
+                  .reset_index(level=0, drop=True)
+            )
+
+            df[f"balance_mean_{window}"] = (
+                df.groupby("customer_id")["balance"]
+                  .rolling(window)
+                  .mean()
+                  .reset_index(level=0, drop=True)
+            )
+
+        # Drop rows with insufficient history
         df = df.dropna()
 
-        df.to_csv(self.config.output_path / "timeseries_features.csv", index=False)
+        output_file = self.config.output_path / "timeseries_features.csv"
+        df.to_csv(output_file, index=False)
+
         return df

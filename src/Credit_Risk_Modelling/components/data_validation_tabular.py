@@ -10,6 +10,16 @@ class TabularDataValidation:
         logging.info("Validating tabular dataset")
         df = pd.read_excel(self.config.data_path, header=1)
 
+        # Normalize column names
+        df.columns = (
+            df.columns
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .str.replace(" ", "_")
+            .str.replace(".", "_")
+        )
+
         missing_cols = set(self.config.required_columns) - set(df.columns)
         if missing_cols:
             raise ValueError(f"Missing columns: {missing_cols}")
