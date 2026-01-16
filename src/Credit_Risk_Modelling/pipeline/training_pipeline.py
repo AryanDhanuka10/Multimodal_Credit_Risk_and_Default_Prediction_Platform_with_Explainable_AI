@@ -21,9 +21,13 @@ from Credit_Risk_Modelling.entity.data_validation_entity import DataValidationCo
 from Credit_Risk_Modelling.components.feature_engineering_tabular import TabularFeatureEngineering
 from Credit_Risk_Modelling.components.feature_engineering_timeseries import TimeSeriesFeatureEngineering
 from Credit_Risk_Modelling.entity.feature_engineering_entity import TimeSeriesFeatureConfig
+from Credit_Risk_Modelling.components.feature_engineering_documents import DocumentFeatureEngineering
+
 
 # Training
 from Credit_Risk_Modelling.components.model_trainer_timeseries import TimeSeriesModelTrainer
+from Credit_Risk_Modelling.components.model_trainer_documents import DocumentRiskModelTrainer
+
 
 
 logging.basicConfig(
@@ -134,10 +138,30 @@ class TrainingPipeline:
 
         TimeSeriesModelTrainer(
             data_path=Path("artifacts/feature_engineering/timeseries/timeseries_features.csv"),
-            model_path=ts_model_path / "lightgbm.pkl",
+            model_path=Path("artifacts/training/timeseries/lightgbm.pkl"),
+            target_col="default_flag"
         ).train()
 
+
         logging.info("Model training stage completed")
+
+    def run_document_pipeline(self):
+        logging.info("Starting document vision pipeline")
+
+        image_dir = Path("artifacts/data_ingestion/documents/images")
+        fe_output = Path("artifacts/feature_engineering/documents")
+
+        fe = DocumentFeatureEngineering(image_dir, fe_output)
+        fe.extract_embeddings()
+
+        trainer = DocumentRiskModelTrainer(
+            embedding_path=fe_output / "document_embeddings.pkl",
+            model_path=Path("artifacts/training/documents/document_risk_model.pkl")
+        )
+        trainer.train()
+
+        logging.info("Document vision pipeline completed")
+
 
     # FULL PIPELINE
     def run_pipeline(self):
@@ -145,6 +169,8 @@ class TrainingPipeline:
         self.run_data_validation()
         self.run_feature_engineering()
         self.run_model_training()
+        self.run_document_pipeline()
+
 
 
 # ENTRY POINT
