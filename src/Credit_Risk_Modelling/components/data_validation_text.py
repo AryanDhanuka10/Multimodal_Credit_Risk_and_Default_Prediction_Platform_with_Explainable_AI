@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 class TextDataValidation:
-    def __init__(self, data_path: Path, text_column: str = "complaint_what_happened"):
+    def __init__(self, data_path: Path, text_column: str = "Consumer complaint narrative"):
         self.data_path = data_path
         self.text_column = text_column
 

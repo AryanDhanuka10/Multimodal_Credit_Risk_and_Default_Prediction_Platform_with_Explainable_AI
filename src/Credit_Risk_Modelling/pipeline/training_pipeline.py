@@ -22,11 +22,15 @@ from Credit_Risk_Modelling.components.feature_engineering_tabular import Tabular
 from Credit_Risk_Modelling.components.feature_engineering_timeseries import TimeSeriesFeatureEngineering
 from Credit_Risk_Modelling.entity.feature_engineering_entity import TimeSeriesFeatureConfig
 from Credit_Risk_Modelling.components.feature_engineering_documents import DocumentFeatureEngineering
+from Credit_Risk_Modelling.components.feature_engineering_text import TextFeatureEngineering
+
 
 
 # Training
 from Credit_Risk_Modelling.components.model_trainer_timeseries import TimeSeriesModelTrainer
 from Credit_Risk_Modelling.components.model_trainer_documents import DocumentRiskModelTrainer
+from Credit_Risk_Modelling.components.model_trainer_text import TextRiskModelTrainer
+
 
 
 
@@ -162,6 +166,29 @@ class TrainingPipeline:
 
         logging.info("Document vision pipeline completed")
 
+    def run_text_pipeline(self):
+        logging.info("Starting NLP text pipeline")
+
+        fe = TextFeatureEngineering(
+            data_path=Path("artifacts/data_ingestion/text/complaints.csv"),
+            text_column="Consumer complaint narrative",
+            output_dir=Path("artifacts/feature_engineering/text")
+        )
+
+        embeddings = fe.transform()
+
+        if embeddings is None:
+            logging.warning("Text pipeline skipped")
+            return
+
+        trainer = TextRiskModelTrainer(
+            embedding_path=Path("artifacts/feature_engineering/text/text_embeddings.pkl"),
+            model_path=Path("artifacts/training/text/text_risk_model.pkl")
+        )
+
+        trainer.train()
+
+
 
     # FULL PIPELINE
     def run_pipeline(self):
@@ -170,6 +197,8 @@ class TrainingPipeline:
         self.run_feature_engineering()
         self.run_model_training()
         self.run_document_pipeline()
+        self.run_text_pipeline()
+
 
 
 
