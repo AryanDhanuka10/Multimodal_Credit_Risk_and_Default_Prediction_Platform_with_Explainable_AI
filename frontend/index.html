@@ -51,6 +51,37 @@
             font-weight: 300;
         }
 
+        .header .status {
+            margin-top: 15px;
+            font-size: 0.9em;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #6bcf7f;
+        }
+
+        .status-dot.disconnected {
+            background: #ff6b6b;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
         .content {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -173,13 +204,18 @@
             font-size: 1.1em;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
-        .btn-primary:active {
+        .btn-primary:active:not(:disabled) {
             transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .results-panel {
@@ -329,6 +365,22 @@
             border-radius: 8px;
             margin: 15px 0;
             display: none;
+            animation: shake 0.3s ease;
+        }
+
+        .success {
+            background: #6bcf7f;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
 
         @media (max-width: 768px) {
@@ -355,6 +407,10 @@
         <div class="header">
             <h1>🧠 Credit Risk Prediction</h1>
             <p>Multimodal AI-Powered Default Prediction System</p>
+            <div class="status">
+                <span class="status-dot connected" id="statusDot"></span>
+                <span id="statusText">Initializing...</span>
+            </div>
         </div>
 
         <div class="content">
@@ -394,7 +450,7 @@
                     <input type="text" id="timeseries" placeholder="e.g., 5000,6000,4500">
                 </div>
 
-                <h2 class="section-title" style="margin-top: 30px;">Document Upload</h2>
+                <h2 class="section-title" style="margin-top: 30px;">Document Upload (Optional)</h2>
                 
                 <div class="file-upload">
                     <input type="file" id="documentFile" accept="image/*">
@@ -404,16 +460,17 @@
                     <div class="file-name" id="fileName"></div>
                 </div>
 
-                <h2 class="section-title" style="margin-top: 30px;">Customer Complaint</h2>
+                <h2 class="section-title" style="margin-top: 30px;">Customer Complaint (Optional)</h2>
                 
                 <div class="input-group">
-                    <label>Complaint Narrative (optional)</label>
+                    <label>Complaint Narrative</label>
                     <textarea id="complaint" placeholder="Describe any customer complaints or concerns..."></textarea>
                 </div>
 
                 <div class="error" id="errorMsg"></div>
+                <div class="success" id="successMsg"></div>
 
-                <button class="btn-primary" onclick="predictRisk()">🚀 Predict Credit Risk</button>
+                <button class="btn-primary" id="predictBtn" onclick="predictRisk()">🚀 Predict Credit Risk</button>
             </div>
 
             <!-- RIGHT SECTION: RESULTS -->
@@ -513,7 +570,45 @@
         </div>
     </div>
 
+    <!-- Configuration Script -->
     <script>
+        // Environment-aware backend URL configuration
+        const CONFIG = {
+            BACKEND_URL: window.location.hostname === 'localhost' 
+                ? 'http://localhost:8001'
+                : 'https://aryandhanuka10-credit-risk-api.hf.space'  // Replace with your HF Space URL
+        };
+    </script>
+
+    <!-- Main Application Script -->
+    <script>
+        // Use configured backend URL
+        const BACKEND_URL = CONFIG.BACKEND_URL;
+
+        // Check backend connection on load
+        window.addEventListener('load', checkBackendConnection);
+
+        async function checkBackendConnection() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                if (response.ok) {
+                    document.getElementById('statusDot').className = 'status-dot connected';
+                    document.getElementById('statusText').textContent = 'Backend Connected ✓';
+                } else {
+                    setBackendError();
+                }
+            } catch (error) {
+                setBackendError();
+            }
+        }
+
+        function setBackendError() {
+            document.getElementById('statusDot').className = 'status-dot disconnected';
+            document.getElementById('statusText').textContent = 'Backend Disconnected ✗';
+            document.getElementById('predictBtn').disabled = true;
+            showError('⚠️ Backend not connected. Please check your connection.');
+        }
+
         // File upload handling
         const fileInput = document.getElementById('documentFile');
         const fileLabel = document.querySelector('.file-upload-label');
@@ -548,7 +643,9 @@
         // Main prediction function
         async function predictRisk() {
             const errorMsg = document.getElementById('errorMsg');
+            const successMsg = document.getElementById('successMsg');
             errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
 
             // Validate inputs
             const creditLimit = parseFloat(document.getElementById('creditLimit').value);
@@ -565,6 +662,7 @@
             // Show loading state
             document.getElementById('loading').style.display = 'block';
             document.getElementById('results').classList.remove('active');
+            document.getElementById('predictBtn').disabled = true;
 
             try {
                 // Prepare payload
@@ -583,51 +681,30 @@
                     }
                 };
 
-                // Simulate API call (replace with actual endpoint)
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                
-                // Generate demo results based on inputs
-                const results = generateMockResults(payload);
-                
+                // Call backend API
+                const response = await fetch(`${BACKEND_URL}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.statusText}`);
+                }
+
+                const results = await response.json();
                 displayResults(results);
+                showSuccess('✓ Risk prediction completed successfully!');
+                
             } catch (error) {
-                showError('Error predicting risk. Please try again.');
+                console.error('Error:', error);
+                showError(`Error: ${error.message}. Make sure backend is running.`);
             } finally {
                 document.getElementById('loading').style.display = 'none';
+                document.getElementById('predictBtn').disabled = false;
             }
-        }
-
-        function generateMockResults(payload) {
-            const tabularScore = payload.tabular.features.f1 > 0.5 ? 0.3 : 0.6;
-            const timeseriesScore = Math.random() * 0.4 + 0.2;
-            const visionScore = Math.random() * 0.5;
-            const textScore = Math.random() * 0.3;
-
-            const signals = [
-                { name: 'tabular', score: tabularScore, confidence: 0.9 },
-                { name: 'timeseries', score: timeseriesScore, confidence: 0.8 },
-                { name: 'vision', score: visionScore, confidence: 0.7 },
-                { name: 'text', score: textScore, confidence: 0.6 }
-            ];
-
-            const weighted = signals.reduce((sum, s) => sum + s.score * s.confidence, 0);
-            const totalWeight = signals.reduce((sum, s) => sum + s.confidence, 0);
-            const finalScore = weighted / totalWeight;
-
-            const breakdown = {};
-            signals.forEach(s => {
-                breakdown[s.name] = {
-                    score: s.score,
-                    confidence: s.confidence,
-                    weighted_contribution: s.score * s.confidence,
-                    percent_contribution: (s.score * s.confidence) / weighted
-                };
-            });
-
-            return {
-                final_risk_score: parseFloat(finalScore.toFixed(2)),
-                breakdown: breakdown
-            };
         }
 
         function displayResults(results) {
@@ -673,6 +750,15 @@
             const errorMsg = document.getElementById('errorMsg');
             errorMsg.textContent = message;
             errorMsg.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            const successMsg = document.getElementById('successMsg');
+            successMsg.textContent = message;
+            successMsg.style.display = 'block';
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 3000);
         }
     </script>
 </body>
