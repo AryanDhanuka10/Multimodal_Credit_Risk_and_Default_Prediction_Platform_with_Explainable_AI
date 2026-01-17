@@ -225,6 +225,8 @@ This is a **deployable AI product**.
 ## 👤 Author
 
 **Aryan**
+
 B.Tech | AI / ML Engineer
+
 Focused on building **production-grade AI systems**, not demos.
 
