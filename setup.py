@@ -6,4 +6,5 @@ setup(
     author="Aryan",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
+    python_requires=">=3.10",
 )

@@ -2,5 +2,5 @@
 const CONFIG = {
   BACKEND_URL: window.location.hostname === 'localhost' 
     ? 'http://localhost:8001'
-    : 'https://credit-risk-api.hf.space'  // Will update this later
+    : 'https://credit-risk-api.hf.space'  
 };
