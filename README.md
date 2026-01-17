@@ -375,20 +375,14 @@ pytest --cov=src tests/ -v
 
 ### **Frontend (Deployed)**
 ```
-Deployed URL: [ADD YOUR FRONTEND DEPLOYMENT URL HERE]
-Examples:
-- Vercel: https://credit-risk-frontend.vercel.app
-- Netlify: https://credit-risk-frontend.netlify.app
-- GitHub Pages: https://username.github.io/credit-risk-frontend
+Deployed URL: [https://multimodal-credit-risk-and-default-pi.vercel.app/]
+
 ```
 
 ### **Backend (Deployed)**
 ```
-Deployed URL: [ADD YOUR BACKEND DEPLOYMENT URL HERE]
-Examples:
-- Heroku: https://credit-risk-api.herokuapp.com
-- AWS EC2: https://credit-risk-api.example.com
-- Render: https://credit-risk-api.onrender.com
+Deployed URL: [https://aryandhanuka10-credit-risk-api.hf.space]
+
 ```
 
 ---
