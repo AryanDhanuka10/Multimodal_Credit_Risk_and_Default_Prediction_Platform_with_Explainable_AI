@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Risk & Default Prediction Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            color: white;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 40px;
+        }
+
+        .section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .section-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 25px;
+            background: linear-gradient(180deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .file-upload {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 20px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .file-upload-label:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #764ba2;
+        }
+
+        .file-upload-label.active {
+            background: rgba(102, 126, 234, 0.15);
+            border-color: #764ba2;
+        }
+
+        .file-name {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        button {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1em;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .results-panel {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 12px;
+            padding: 25px;
+            display: none;
+            gap: 20px;
+            animation: slideIn 0.5s ease;
+        }
+
+        .results-panel.active {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .risk-score-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            grid-column: 1 / -1;
+        }
+
+        .risk-score-value {
+            font-size: 4em;
+            font-weight: 700;
+            margin: 15px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .risk-label {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .risk-indicator {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .risk-high {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .risk-medium {
+            background: #ffd93d;
+            color: #333;
+        }
+
+        .risk-low {
+            background: #6bcf7f;
+            color: white;
+        }
+
+        .breakdown-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .breakdown-header {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            text-transform: capitalize;
+        }
+
+        .breakdown-metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 0.95em;
+        }
+
+        .breakdown-metric label {
+            color: #666;
+        }
+
+        .breakdown-metric span {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .spinner {
+            border: 4px solid #e0e0e0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .results-panel.active {
+                grid-template-columns: 1fr;
+            }
+
+            .risk-score-value {
+                font-size: 3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Credit Risk Prediction</h1>
+            <p>Multimodal AI-Powered Default Prediction System</p>
+        </div>
+
+        <div class="content">
+            <!-- LEFT SECTION: INPUT FORMS -->
+            <div class="section">
+                <h2 class="section-title">Tabular Information</h2>
+                
+                <div class="input-group">
+                    <label>Credit Limit (₹)</label>
+                    <input type="number" id="creditLimit" placeholder="e.g., 50000" step="1000">
+                </div>
+
+                <div class="input-group">
+                    <label>Monthly Income (₹)</label>
+                    <input type="number" id="monthlyIncome" placeholder="e.g., 75000" step="1000">
+                </div>
+
+                <div class="input-group">
+                    <label>Monthly Bill Statement (₹)</label>
+                    <input type="number" id="billStatement" placeholder="e.g., 25000" step="1000">
+                </div>
+
+                <div class="input-group">
+                    <label>Age (years)</label>
+                    <input type="number" id="age" placeholder="e.g., 35" min="18" max="100">
+                </div>
+
+                <div class="input-group">
+                    <label>Outstanding Balance (₹)</label>
+                    <input type="number" id="balance" placeholder="e.g., 10000" step="1000">
+                </div>
+
+                <h2 class="section-title" style="margin-top: 30px;">Time-Series Data</h2>
+                
+                <div class="input-group">
+                    <label>Last 3 Months Transaction Values (comma-separated)</label>
+                    <input type="text" id="timeseries" placeholder="e.g., 5000,6000,4500">
+                </div>
+
+                <h2 class="section-title" style="margin-top: 30px;">Document Upload</h2>
+                
+                <div class="file-upload">
+                    <input type="file" id="documentFile" accept="image/*">
+                    <label for="documentFile" class="file-upload-label">
+                        📄 Click to upload financial document or drag & drop
+                    </label>
+                    <div class="file-name" id="fileName"></div>
+                </div>
+
+                <h2 class="section-title" style="margin-top: 30px;">Customer Complaint</h2>
+                
+                <div class="input-group">
+                    <label>Complaint Narrative (optional)</label>
+                    <textarea id="complaint" placeholder="Describe any customer complaints or concerns..."></textarea>
+                </div>
+
+                <div class="error" id="errorMsg"></div>
+
+                <button class="btn-primary" onclick="predictRisk()">🚀 Predict Credit Risk</button>
+            </div>
+
+            <!-- RIGHT SECTION: RESULTS -->
+            <div class="section">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing multimodal data...</p>
+                </div>
+
+                <div class="results-panel" id="results">
+                    <div class="risk-score-card">
+                        <div class="risk-label">Final Risk Score</div>
+                        <div class="risk-score-value" id="riskScore">--</div>
+                        <div class="risk-indicator" id="riskCategory"></div>
+                        <p style="color: #666; margin-top: 15px; font-size: 0.9em;">
+                            Lower scores indicate better creditworthiness
+                        </p>
+                    </div>
+
+                    <div class="breakdown-item">
+                        <div class="breakdown-header">📊 Tabular Analysis</div>
+                        <div class="breakdown-metric">
+                            <label>Score:</label>
+                            <span id="tabularScore">--</span>
+                        </div>
+                        <div class="breakdown-metric">
+                            <label>Confidence:</label>
+                            <span id="tabularConf">--</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="tabularProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="breakdown-metric">
+                            <label>Contribution:</label>
+                            <span id="tabularContrib">--</span>
+                        </div>
+                    </div>
+
+                    <div class="breakdown-item">
+                        <div class="breakdown-header">⏱️ Time-Series Analysis</div>
+                        <div class="breakdown-metric">
+                            <label>Score:</label>
+                            <span id="timeseriesScore">--</span>
+                        </div>
+                        <div class="breakdown-metric">
+                            <label>Confidence:</label>
+                            <span id="timeseriesConf">--</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="timeseriesProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="breakdown-metric">
+                            <label>Contribution:</label>
+                            <span id="timeseriesContrib">--</span>
+                        </div>
+                    </div>
+
+                    <div class="breakdown-item">
+                        <div class="breakdown-header">🖼️ Document Vision</div>
+                        <div class="breakdown-metric">
+                            <label>Score:</label>
+                            <span id="visionScore">--</span>
+                        </div>
+                        <div class="breakdown-metric">
+                            <label>Confidence:</label>
+                            <span id="visionConf">--</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="visionProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="breakdown-metric">
+                            <label>Contribution:</label>
+                            <span id="visionContrib">--</span>
+                        </div>
+                    </div>
+
+                    <div class="breakdown-item">
+                        <div class="breakdown-header">💬 NLP Text Analysis</div>
+                        <div class="breakdown-metric">
+                            <label>Score:</label>
+                            <span id="textScore">--</span>
+                        </div>
+                        <div class="breakdown-metric">
+                            <label>Confidence:</label>
+                            <span id="textConf">--</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="textProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="breakdown-metric">
+                            <label>Contribution:</label>
+                            <span id="textContrib">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // File upload handling
+        const fileInput = document.getElementById('documentFile');
+        const fileLabel = document.querySelector('.file-upload-label');
+        const fileName = document.getElementById('fileName');
+
+        fileLabel.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileLabel.classList.add('active');
+        });
+
+        fileLabel.addEventListener('dragleave', () => {
+            fileLabel.classList.remove('active');
+        });
+
+        fileLabel.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileLabel.classList.remove('active');
+            fileInput.files = e.dataTransfer.files;
+            updateFileName();
+        });
+
+        fileInput.addEventListener('change', updateFileName);
+
+        function updateFileName() {
+            if (fileInput.files.length > 0) {
+                fileName.textContent = `✓ ${fileInput.files[0].name}`;
+            } else {
+                fileName.textContent = '';
+            }
+        }
+
+        // Main prediction function
+        async function predictRisk() {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.style.display = 'none';
+
+            // Validate inputs
+            const creditLimit = parseFloat(document.getElementById('creditLimit').value);
+            const monthlyIncome = parseFloat(document.getElementById('monthlyIncome').value);
+            const billStatement = parseFloat(document.getElementById('billStatement').value);
+            const age = parseFloat(document.getElementById('age').value);
+            const timeseries = document.getElementById('timeseries').value.trim();
+
+            if (!creditLimit || !monthlyIncome || !billStatement || !age || !timeseries) {
+                showError('Please fill in all required fields');
+                return;
+            }
+
+            // Show loading state
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').classList.remove('active');
+
+            try {
+                // Prepare payload
+                const payload = {
+                    tabular: {
+                        features: {
+                            f0: Math.min(creditLimit / 100000, 1),
+                            f1: Math.min(monthlyIncome / 100000, 1),
+                            f2: Math.min(billStatement / 50000, 1),
+                            f3: Math.min(age / 100, 1),
+                            f4: Math.min(parseFloat(document.getElementById('balance').value || 0) / 50000, 1)
+                        }
+                    },
+                    timeseries: {
+                        values: [timeseries.split(',').map(x => Math.min(parseFloat(x) / 10000, 1))]
+                    }
+                };
+
+                // Simulate API call (replace with actual endpoint)
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Generate demo results based on inputs
+                const results = generateMockResults(payload);
+                
+                displayResults(results);
+            } catch (error) {
+                showError('Error predicting risk. Please try again.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function generateMockResults(payload) {
+            const tabularScore = payload.tabular.features.f1 > 0.5 ? 0.3 : 0.6;
+            const timeseriesScore = Math.random() * 0.4 + 0.2;
+            const visionScore = Math.random() * 0.5;
+            const textScore = Math.random() * 0.3;
+
+            const signals = [
+                { name: 'tabular', score: tabularScore, confidence: 0.9 },
+                { name: 'timeseries', score: timeseriesScore, confidence: 0.8 },
+                { name: 'vision', score: visionScore, confidence: 0.7 },
+                { name: 'text', score: textScore, confidence: 0.6 }
+            ];
+
+            const weighted = signals.reduce((sum, s) => sum + s.score * s.confidence, 0);
+            const totalWeight = signals.reduce((sum, s) => sum + s.confidence, 0);
+            const finalScore = weighted / totalWeight;
+
+            const breakdown = {};
+            signals.forEach(s => {
+                breakdown[s.name] = {
+                    score: s.score,
+                    confidence: s.confidence,
+                    weighted_contribution: s.score * s.confidence,
+                    percent_contribution: (s.score * s.confidence) / weighted
+                };
+            });
+
+            return {
+                final_risk_score: parseFloat(finalScore.toFixed(2)),
+                breakdown: breakdown
+            };
+        }
+
+        function displayResults(results) {
+            const score = results.final_risk_score;
+            
+            // Update main score
+            document.getElementById('riskScore').textContent = (score * 100).toFixed(1) + '%';
+            
+            // Update risk category
+            let category = 'LOW RISK';
+            let categoryClass = 'risk-low';
+            if (score > 0.6) {
+                category = 'HIGH RISK';
+                categoryClass = 'risk-high';
+            } else if (score > 0.35) {
+                category = 'MEDIUM RISK';
+                categoryClass = 'risk-medium';
+            }
+            
+            const indicator = document.getElementById('riskCategory');
+            indicator.textContent = category;
+            indicator.className = 'risk-indicator ' + categoryClass;
+
+            // Update breakdown
+            const breakdown = results.breakdown;
+            updateBreakdownItem('tabular', breakdown.tabular);
+            updateBreakdownItem('timeseries', breakdown.timeseries);
+            updateBreakdownItem('vision', breakdown.vision);
+            updateBreakdownItem('text', breakdown.text);
+
+            // Show results
+            document.getElementById('results').classList.add('active');
+        }
+
+        function updateBreakdownItem(key, data) {
+            document.getElementById(key + 'Score').textContent = (data.score * 100).toFixed(1) + '%';
+            document.getElementById(key + 'Conf').textContent = (data.confidence * 100).toFixed(0) + '%';
+            document.getElementById(key + 'Contrib').textContent = (data.percent_contribution * 100).toFixed(1) + '%';
+            document.getElementById(key + 'Progress').style.width = (data.percent_contribution * 100) + '%';
+        }
+
+        function showError(message) {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
