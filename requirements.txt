@@ -23,6 +23,7 @@ opencv-python
 fastapi
 uvicorn
 pydantic
+httpx
 
 # Experiment Tracking & Reproducibility
 mlflow
