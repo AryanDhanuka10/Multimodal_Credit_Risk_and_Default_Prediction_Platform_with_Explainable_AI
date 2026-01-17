@@ -3,8 +3,8 @@ from Credit_Risk_Modelling.components.risk_adapter_tabular import TabularRiskAda
 from Credit_Risk_Modelling.components.risk_adapter_timeseries import TimeSeriesRiskAdapter
 from Credit_Risk_Modelling.components.risk_adapter_vision import VisionRiskAdapter
 from Credit_Risk_Modelling.components.risk_adapter_text import TextRiskAdapter
+import pandas as pd
 from pathlib import Path
-
 
 def run_inference(
     X_tabular,
@@ -62,4 +62,21 @@ def run_inference(
     signals.append(text_adapter.predict())
 
     result = RiskAggregator().aggregate(signals)
+    return result
+
+def run_explained_inference(X_tabular, X_timeseries, **adapters):
+    result = run_inference(
+        X_tabular,
+        X_timeseries,
+        **adapters
+    )
+
+    explainer = TabularExplainer(
+        Path("artifacts/training/tabular/lightgbm.pkl")
+    )
+
+    result["explanations"] = {
+        "tabular_top_features": explainer.explain(X_tabular)
+    }
+
     return result
