@@ -30,6 +30,9 @@ from Credit_Risk_Modelling.components.feature_engineering_text import TextFeatur
 from Credit_Risk_Modelling.components.model_trainer_timeseries import TimeSeriesModelTrainer
 from Credit_Risk_Modelling.components.model_trainer_documents import DocumentRiskModelTrainer
 from Credit_Risk_Modelling.components.model_trainer_text import TextRiskModelTrainer
+from Credit_Risk_Modelling.components.topic_modeling_text import TextTopicModeler
+from Credit_Risk_Modelling.utils.text_topic_risk_mapping import map_topics_to_risk
+
 
 
 
@@ -176,17 +179,30 @@ class TrainingPipeline:
         )
 
         embeddings = fe.transform()
-
         if embeddings is None:
             logging.warning("Text pipeline skipped")
             return
 
-        trainer = TextRiskModelTrainer(
+        topic_modeler = TextTopicModeler(
             embedding_path=Path("artifacts/feature_engineering/text/text_embeddings.pkl"),
-            model_path=Path("artifacts/training/text/text_risk_model.pkl")
+            output_dir=Path("artifacts/feature_engineering/text"),
+            n_topics=10
         )
 
-        trainer.train()
+        topics = topic_modeler.fit()
+        if topics is None:
+            return
+
+        risk_map = map_topics_to_risk(topics)
+
+        # Save for downstream aggregation
+        import joblib
+        joblib.dump(
+            risk_map,
+            Path("artifacts/feature_engineering/text/text_topic_risk_map.pkl")
+        )
+
+        logging.info("Text topic modeling and risk mapping completed")
 
 
 
